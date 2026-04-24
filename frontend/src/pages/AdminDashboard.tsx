@@ -21,17 +21,6 @@ export default function AdminDashboard() {
     fetchDonations();
   };
 
-  const submitReport = async () => {
-    if(!donorId) return setStatusMsg('Please select a donor.');
-    try {
-      await api.post('/impact/add', { donorId, reportTitle, notes, category: 'General' });
-      setStatusMsg('Report successfully sent.');
-      setReportTitle(''); setNotes(''); setDonorId('');
-    } catch(err: any) {
-      setStatusMsg('Failed to send report.');
-    }
-  };
-
   return (
     <div className="px-[4vw] py-[28px] max-w-6xl mx-auto w-full">
       <div className="bg-gradient-to-br from-forest to-teal rounded-2xl p-8 text-white flex flex-col md:flex-row items-center justify-between gap-5 mb-8 shadow-lg shadow-teal/10">

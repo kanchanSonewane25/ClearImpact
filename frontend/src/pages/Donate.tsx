@@ -1,5 +1,3 @@
-import Footer from '../components/Footer';
-
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import api from '../lib/api';
@@ -26,7 +24,7 @@ export default function Donate() {
       const { data } = await api.post('/payments/create-order', {
         amount,
         allocatedTo: 'General Fund',
-        userId: user ? user.id : undefined,
+        userId: user ? (user as any)._id || (user as any).id : undefined,
         guestName: user ? undefined : 'Guest Donor',
         guestEmail: user ? undefined : 'guest@example.com'
       });
