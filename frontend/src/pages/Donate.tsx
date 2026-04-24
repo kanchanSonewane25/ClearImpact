@@ -21,6 +21,14 @@ export default function Donate() {
     setError('');
 
     try {
+      // First, get the dynamic key
+      const { data: keyData } = await api.get('/payments/key');
+      const razorpayKey = keyData.key;
+
+      if (!razorpayKey) {
+        throw new Error('Payment gateway key not found');
+      }
+
       const { data } = await api.post('/payments/create-order', {
         amount,
         allocatedTo: 'General Fund',
@@ -30,7 +38,7 @@ export default function Donate() {
       });
 
       const options = {
-        key: 'rzp_test_YourKeyIdHere', // Replace with your key in production
+        key: razorpayKey,
         amount: data.order.amount,
         currency: 'INR',
         name: 'ClearImpact Foundation',

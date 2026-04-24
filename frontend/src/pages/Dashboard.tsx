@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import Footer from '../components/Footer';
 import api from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -13,6 +14,20 @@ export default function Dashboard() {
     api.get('/impact/user').then(res => setReports(res.data));
   }, []);
 
+  const allocationData = donations.reduce((acc: any, curr: any) => {
+    const existing = acc.find((item: any) => item.name === curr.allocatedTo);
+    if (existing) existing.value += curr.amount;
+    else acc.push({ name: curr.allocatedTo, value: curr.amount });
+    return acc;
+  }, []);
+
+  const timelineData = [...donations].reverse().map((d: any, index: number) => ({
+    name: `Donation ${index + 1}`,
+    amount: d.amount
+  }));
+
+  const COLORS = ['#1D9E75', '#EF9F27', '#C85A2A', '#5DCAA5'];
+
   return (
     <div className="flex flex-col min-h-screen bg-bg">
       <div className="px-[4vw] pt-[36px]">
@@ -21,6 +36,41 @@ export default function Dashboard() {
       </div>
 
       <div className="px-[4vw] py-[28px] flex-1 pb-16">
+        
+        {donations.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-10">
+            <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
+              <h3 className="text-[15px] font-bold mb-4">Donation Allocation</h3>
+              <div className="h-[250px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie data={allocationData} innerRadius={60} outerRadius={80} paddingAngle={5} dataKey="value">
+                      {allocationData.map((_entry: any, index: number) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => `₹${value}`} />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+            
+            <div className="bg-white border border-border rounded-xl p-5 shadow-sm">
+              <h3 className="text-[15px] font-bold mb-4">Contribution History</h3>
+              <div className="h-[250px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={timelineData}>
+                    <XAxis dataKey="name" fontSize={12} tickLine={false} axisLine={false} />
+                    <YAxis fontSize={12} tickLine={false} axisLine={false} tickFormatter={(val) => `₹${val}`} />
+                    <Tooltip cursor={{fill: '#f0faf6'}} formatter={(value) => `₹${value}`} />
+                    <Bar dataKey="amount" fill="#1D9E75" radius={[4, 4, 0, 0]} />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </div>
+          </div>
+        )}
+
         <h3 className="text-lg font-bold mb-4">My Donations</h3>
         <div className="flex flex-col gap-3">
            {donations.length === 0 ? <p className="text-muted text-sm">No donations yet.</p> : null}

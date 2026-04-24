@@ -13,6 +13,11 @@ const razorpay = new Razorpay({
   key_secret: process.env.RAZORPAY_KEY_SECRET || '',
 });
 
+// Get Razorpay Key
+router.get('/key', (req: any, res: any) => {
+  res.status(200).json({ key: process.env.RAZORPAY_KEY_ID });
+});
+
 // Create Order
 router.post('/create-order', async (req: any, res: any) => {
   try {
