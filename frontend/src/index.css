@@ -1,0 +1,35 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --forest: #0F6E56;
+    --teal: #1D9E75;
+    --teal-mid: #5DCAA5;
+    --teal-light: #E1F5EE;
+    --teal-pale: #f0faf6;
+    --amber: #EF9F27;
+    --amber-light: #FAEEDA;
+    --coral: #C85A2A;
+    --coral-light: #FAECE7;
+    --ink: #111917;
+    --ink-2: #2d3a34;
+    --muted: #5f756e;
+    --muted-light: #8fa39b;
+    --border: #d4e4dc;
+    --border-light: #eaf3ed;
+    --bg: #f4faf7;
+    --danger: #dc3545;
+  }
+}
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background-color: var(--bg);
+  color: var(--ink);
+}
+
+h1, h2, h3 {
+  font-family: 'Cormorant Garamond', serif;
+}

@@ -1,0 +1,121 @@
+import { useEffect, useState } from 'react';
+import api from '../lib/api';
+
+export default function AdminDashboard() {
+  const [donations, setDonations] = useState([]);
+  const [reportTitle, setReportTitle] = useState('');
+  const [notes, setNotes] = useState('');
+  const [donorId, setDonorId] = useState('');
+  const [statusMsg, setStatusMsg] = useState('');
+
+  const fetchDonations = () => {
+    api.get('/donations').then(res => setDonations(res.data));
+  };
+
+  useEffect(() => {
+    fetchDonations();
+  }, []);
+
+  const updateStatus = async (id: string, newStatus: string) => {
+    await api.put(`/donations/${id}/status`, { status: newStatus });
+    fetchDonations();
+  };
+
+  const submitReport = async () => {
+    if(!donorId) return setStatusMsg('Please select a donor.');
+    try {
+      await api.post('/impact/add', { donorId, reportTitle, notes, category: 'General' });
+      setStatusMsg('Report successfully sent.');
+      setReportTitle(''); setNotes(''); setDonorId('');
+    } catch(err: any) {
+      setStatusMsg('Failed to send report.');
+    }
+  };
+
+  return (
+    <div className="px-[4vw] py-[28px] max-w-6xl mx-auto w-full">
+      <div className="bg-gradient-to-br from-forest to-teal rounded-2xl p-8 text-white flex flex-col md:flex-row items-center justify-between gap-5 mb-8 shadow-lg shadow-teal/10">
+         <div>
+            <h2 className="text-2xl mb-1 font-serif font-bold">NGO Admin Portal</h2>
+            <p className="text-sm text-white/80">Manage donations, update statuses, upload impact reports</p>
+         </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-[1.5fr_1fr] gap-8">
+         <div className="bg-white border border-border p-6 rounded-2xl">
+            <h3 className="text-lg font-bold mb-4 font-serif text-ink">All Donations</h3>
+            <div className="flex flex-col gap-3">
+               {donations.map((d: any) => (
+                  <div key={d._id} className="bg-bg border border-border-light rounded-xl p-4 flex justify-between items-center hover:shadow-sm transition-all">
+                     <div>
+                        <strong className="text-sm font-semibold">{d.donor?.name || d.guestName || 'Anonymous'}</strong> <span className="text-forest font-bold">₹{d.amount}</span>
+                        <div className="text-[11px] text-muted font-mono mt-1 px-2 py-0.5 bg-teal-pale inline-block rounded">{d.traceId}</div>
+                     </div>
+                     <select 
+                       value={d.status} 
+                       onChange={(e) => updateStatus(d._id, e.target.value)}
+                       className="p-2 border border-border rounded-lg bg-white text-[12px] font-semibold outline-none cursor-pointer focus:border-teal transition-all"
+                     >
+                       <option value="pending">Pending</option>
+                       <option value="deployed">Deployed</option>
+                       <option value="completed">Completed</option>
+                       <option value="cancelled">Cancelled</option>
+                     </select>
+                  </div>
+               ))}
+            </div>
+         </div>
+
+         <div className="bg-white border border-border p-6 rounded-2xl h-fit">
+            <h3 className="text-lg font-bold mb-4 font-serif text-ink">Upload Impact Report</h3>
+               {statusMsg && <div className="mb-4 text-sm font-semibold text-teal bg-teal-pale p-3 rounded-lg border border-border-light">{statusMsg}</div>}
+               <div className="mb-4">
+                  <label className="block text-[13px] font-semibold mb-1.5 text-ink-2">Select Donor</label>
+                  <select className="w-full p-2.5 outline-none border-2 border-border rounded-lg text-sm focus:border-teal transition-colors" value={donorId} onChange={e=>setDonorId(e.target.value)}>
+                     <option value="">-- Choose a Donor --</option>
+                     {donations.filter((d: any) => d.donor).map((d: any) => (
+                        <option key={d._id} value={d.donor._id}>{d.donor.name} (₹{d.amount} - {d.traceId})</option>
+                     ))}
+                  </select>
+               </div>
+               <div className="mb-4">
+                  <label className="block text-[13px] font-semibold mb-1.5 text-ink-2">Report Title</label>
+                  <input className="w-full p-2.5 outline-none border-2 border-border rounded-lg text-sm focus:border-teal transition-colors" value={reportTitle} onChange={e=>setReportTitle(e.target.value)} placeholder="e.g. Healthcare Update" />
+               </div>
+               <div className="mb-4">
+                  <label className="block text-[13px] font-semibold mb-1.5 text-ink-2">Report File (PDF/Image)</label>
+                  <input type="file" id="reportFile" className="w-full p-2 outline-none border-2 border-border rounded-lg text-[13px] focus:border-teal transition-colors" />
+               </div>
+               <div className="mb-5">
+                  <label className="block text-[13px] font-semibold mb-1.5 text-ink-2">Notes</label>
+                  <textarea className="w-full p-2.5 outline-none border-2 border-border rounded-lg text-[13px] focus:border-teal transition-colors" value={notes} onChange={e=>setNotes(e.target.value)} rows={4} placeholder="Describe the impact generated by this donation..."></textarea>
+               </div>
+               <button onClick={async () => {
+                 if(!donorId) return setStatusMsg('Please select a donor.');
+                 setStatusMsg('Uploading report...');
+                 try {
+                   const fileInput = document.getElementById('reportFile') as HTMLInputElement;
+                   const file = fileInput?.files?.[0];
+                   
+                   const formData = new FormData();
+                   formData.append('donorId', donorId);
+                   formData.append('reportTitle', reportTitle);
+                   formData.append('notes', notes);
+                   formData.append('category', 'General');
+                   if (file) formData.append('reportFile', file);
+                   
+                   await api.post('/impact/add', formData, {
+                     headers: { 'Content-Type': 'multipart/form-data' }
+                   });
+                   setStatusMsg('Report successfully sent.');
+                   setReportTitle(''); setNotes(''); setDonorId('');
+                   if (fileInput) fileInput.value = '';
+                 } catch(err: any) {
+                   setStatusMsg('Failed to send report.');
+                 }
+               }} className="w-full bg-teal hover:bg-forest transition-colors text-white py-3 rounded-lg text-[15px] font-semibold shadow-lg shadow-teal/20">Send Report</button>
+         </div>
+      </div>
+    </div>
+  );
+}
