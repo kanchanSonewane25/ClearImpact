@@ -2,6 +2,8 @@ import express from 'express';
 import cors from 'cors';
 import dotenv from 'dotenv';
 import { connectDB } from './db';
+import User from './models/User';
+import bcrypt from 'bcryptjs';
 import authRoutes from './routes/auth';
 import donationRoutes from './routes/donations';
 import impactRoutes from './routes/impact';
@@ -9,7 +11,29 @@ import storyRoutes from './routes/stories';
 import paymentRoutes from './routes/payments';
 
 dotenv.config();
-connectDB();
+
+const seedAdmin = async () => {
+  try {
+    const adminExists = await User.findOne({ role: 'admin' });
+    if (!adminExists) {
+      const salt = await bcrypt.genSalt(10);
+      const hashedPassword = await bcrypt.hash('password123', salt);
+      await User.create({
+        name: 'Admin',
+        email: 'staff@anandwan.org',
+        password: hashedPassword,
+        role: 'admin',
+      });
+      console.log('Admin user seeded: staff@anandwan.org / password123');
+    }
+  } catch (error) {
+    console.error('Error seeding admin user:', error);
+  }
+};
+
+connectDB().then(() => {
+  seedAdmin();
+});
 
 const app = express();
 app.use(cors());
